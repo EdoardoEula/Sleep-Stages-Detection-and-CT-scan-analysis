@@ -77,3 +77,13 @@ for i = 1:length(EEG)/ep_samples
 end
 
 var = cell2table(var, 'VariableNames', names);
+save("variances.mat", "var");
+
+%%
+%Plot of the variances for each frequency band
+t = (1:30:30*round(length(EEG)/ep_samples))/3600;
+subplot(411), plot(t,10*log10(var.beta)), title("Beta");
+subplot(412), plot(t,10*log10(var.alpha)), title("Alpha");
+subplot(413), plot(t,10*log10(var.theta)), title("Theta");
+subplot(414), plot(t,10*log10(var.delta)), title("Delta");
+
