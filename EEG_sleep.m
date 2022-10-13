@@ -1,5 +1,4 @@
-%EEG
-
+clc
 clear
 close all
 %%
@@ -19,8 +18,6 @@ freq1 = 0:fs_EEG/N:fs_EEG/2;
 
 figure
 plot(freq1,PSDx)
-
-trapz(freq1,PSDx) %check that variance is equal to var(x)
 
 %%
 [r, lag] = xcorr(EEG,EEG,'biased');
