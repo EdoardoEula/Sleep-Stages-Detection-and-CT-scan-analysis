@@ -2,7 +2,7 @@
 
 clear
 close all
-%%%
+%%
 load("record.mat");
 EEG = double(record);
 clear record
