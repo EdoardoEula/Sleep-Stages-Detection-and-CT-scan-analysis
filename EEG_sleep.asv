@@ -41,7 +41,7 @@ var = cell(round(length(EEG)/ep_samples), 4);
 %EEG bands
 f_vect_high = [14 8 4 0.5];
 f_vect_low = [30 13 8 4];
-names = ["beta", "alpha", "theta", "delta"];
+names = [{"beta"}, {"alpha"}, {"theta"}, {"delta"}];
 
 for i = 1:length(EEG)/ep_samples
 % for i = 150:152
@@ -75,8 +75,6 @@ for i = 1:length(EEG)/ep_samples
         var{i, j} = trapz(freq1, PSDx);
     end
 end
-
-var = cell2table(var, 'VariableNames', names);
 
 
 %% Plot
