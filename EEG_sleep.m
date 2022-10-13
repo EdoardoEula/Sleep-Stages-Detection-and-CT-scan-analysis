@@ -1,5 +1,5 @@
 %EEG
-
+clc
 clear
 close all
 %%
