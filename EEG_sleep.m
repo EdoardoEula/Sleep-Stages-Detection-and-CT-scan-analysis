@@ -5,7 +5,7 @@ close all
 load("record.mat");
 EEG = double(record);
 clear record
-fs_EEG = 512;
+fs_EEG = 500;
 
 t = 0:1:300;
 %% PSD with fft
