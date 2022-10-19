@@ -16,7 +16,7 @@ N = length(EEG);
 EEG = filtfilt(b1,a1, EEG);
 
 %Low-pass
-filter_order = 4;
+filter_order = 6;
 f_cut = 30;
 wc = f_cut/(fs_EEG/2);
 [b1,a1] = butter(filter_order,wc,'low');
@@ -43,6 +43,7 @@ f_vect_high = [14 8 4 0.5];
 f_vect_low = [30 13 8 4];
 names = ["beta", "alpha", "theta", "delta"];
 
+%% PSD WITH FFT
 for i = 1:length(EEG)/ep_samples
 % for i = 150:152
     ep{i} = EEG(1+ep_samples*(i-1):ep_samples*(i));
@@ -87,3 +88,39 @@ subplot(412), plot(t,10*log10(var.alpha)), title("Alpha");
 subplot(413), plot(t,10*log10(var.theta)), title("Theta");
 subplot(414), plot(t,10*log10(var.delta)), title("Delta");
 
+%% Periodogram 
+var_per=cell(round(length(EEG)/ep_samples), 4);
+for i = 1:length(EEG)/ep_samples
+% for i = 150:152
+    ep{i} = EEG(1+ep_samples*(i-1):ep_samples*(i));
+    for j = 1 : 4
+        %Low-pass
+        f_cut = f_vect_low(j);
+        wc = f_cut/(fs_EEG/2);
+        [b1,a1] = butter(filter_order,wc,'low');
+        %figure; freqz(b1,a1,1024,fs_EEG);
+        ep_lp = filtfilt(b1,a1,ep{i});
+
+        %High-pass
+        f_cut = f_vect_high(j);
+        wc = f_cut/(fs_EEG/2);
+        [b1,a1] = butter(filter_order,wc,'high');
+        %figure; freqz(b1,a1,1024,fs_EEG);
+        ep_filt = filtfilt(b1,a1,ep_lp);
+
+        %PSD with fft
+        nfft=16384;
+        [pxx,f]=periodogram(ep_filt, hamming(length(ep_filt)), nfft,fs_EEG);
+        
+
+%         figure, 
+%         plot(f,10*log10(pxx))
+%         ylabel("[dB/Hz]")
+%         title([names{j}, " epoch", i])
+%         xlim([0 f_vect_low(j) + 5])
+        var_per{i, j} = trapz(f, pxx);
+    end
+end
+
+var_per = cell2table(var_per, 'VariableNames', names);
+save("variances_per.mat", "var");
