@@ -142,11 +142,6 @@ subplot(428), plot(t,perc.delta), title("Delta"),ylim([0 1]), xlim(lim);
 saveas(gcf(), "Var and perc")
 
 %% 
-domTab = cell(floor(length(EEG)/ep_samples),1);
 for i = 1:floor(length(EEG)/ep_samples)
-    j = find(perc{i,:} == max(perc{i,:}));
-    domTab{i} = perc.Properties.VariableNames{j};
+    perc[max(perc{i,:})
 end
-
-domTab = cell2table(domTab, 'VariableNames', "Dominant band");
-save("dom_waves.mat", "domTab");
