@@ -6,9 +6,40 @@ load("record.mat");
 EEG = double(record);
 clear record
 fs_EEG = 512;
-EEG = EEG(5*60*fs_EEG:end);
+EEG = EEG(2*60*fs_EEG:end);
 EEG = EEG((length(EEG)/fs_EEG - 5*60)*fs_EEG:-1:1);
 N = length(EEG);
+%% Filtering
+%Removing net interference
+[b,a] = iirnotch(60/(fs_EEG/2),0.2/(fs_EEG/2)); %this function wants radians!
+% figure, freqz(b3,a3);
+EEG = filtfilt(b,a, EEG);
+
+%Low-pass
+filter_order = 4;
+f_cut = 70;
+wc = f_cut/(fs_EEG/2);
+[b,a] = butter(filter_order,wc,'low');
+%figure; freqz(b1,a1,1024,fs_EEG);
+
+EEG = filtfilt(b,a,EEG);
+
+%High-pass
+f_cut = 0.5;
+wc = f_cut/(fs_EEG/2);
+[b,a] = butter(filter_order,wc,'high');
+%figure; freqz(b1,a1,1024,fs_EEG);
+
+EEG = filtfilt(b,a,EEG);
+
+%plotting power spectrum
+noverlap = 20*fs_EEG/2;
+Pxx = pwelch(EEG, hanning(length(EEG)), noverlap, [], fs_EEG);
+freq1 = 0:fs_EEG/length(Pxx):fs_EEG/2;
+
+figure
+plot(freq1, Pxx(1:length(Pxx)/2+1))
+
 %% Dividing into epochs
 % 30 sec
 lep = 30;
@@ -29,10 +60,6 @@ for i = 1:floor(length(EEG)/ep_samples)
     ep{i} = EEG(1+ep_samples*(i-1):ep_samples*(i));
     ep{i} = detrend(ep{i});
 
-    %Removing net interference
-    [b,a] = iirnotch(60/(fs_EEG/2),0.2/(fs_EEG/2)); %this function wants radians!
-    % figure, freqz(b3,a3);
-    ep{i} = filtfilt(b,a, ep{i});
 
 %     %Low-pass
 %     filter_order = 2;
@@ -87,7 +114,6 @@ for i = 1:floor(length(EEG)/ep_samples)
         %PSD with Welch windowing
         noverlap = 20*fs_EEG/2;
         Pxx = pwelch(ep_filt, hanning(ep_samples), noverlap, [], fs_EEG);
-        freq1 = 0:fs_EEG/length(Pxx):fs_EEG/2;
 
         var{i,j} = trapz(Pxx);
         perc{i, j} = trapz(Pxx)/trapz(Pxx_ep);
