@@ -17,7 +17,7 @@ EEG = filtfilt(b,a, EEG);
 
 %Low-pass
 filter_order = 4;
-f_cut = 70;
+f_cut = 40;
 wc = f_cut/(fs_EEG/2);
 [b,a] = butter(filter_order,wc,'low');
 %figure; freqz(b1,a1,1024,fs_EEG);
