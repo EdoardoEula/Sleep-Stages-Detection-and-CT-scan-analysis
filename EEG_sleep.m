@@ -33,7 +33,7 @@ wc = f_cut/(fs_EEG/2);
 EEG = filtfilt(b,a,EEG);
 
 %plotting power spectrum
-noverlap = 20*fs_EEG/2;
+noverlap = 20*fs_EEG;
 Pxx = pwelch(EEG, hanning(length(EEG)), noverlap, [], fs_EEG);
 freq1 = 0:fs_EEG/length(Pxx):fs_EEG/2;
 
@@ -79,7 +79,7 @@ for i = 1:floor(length(EEG)/ep_samples)
 %     ep{i} = filtfilt(b,a,ep{i});
 
     %PSD with Welch windowing
-    noverlap = 20*fs_EEG/2;
+    noverlap = 20*fs_EEG;
     Pxx_ep = pwelch(ep{i}, hanning(ep_samples), noverlap, [], fs_EEG);
     freq1_ep = 0:fs_EEG/length(Pxx_ep):fs_EEG/2;
 
@@ -165,6 +165,25 @@ subplot(322), plot(t,perc.alpha), title("Alpha"),ylim([0 1]), xlim(lim);
 subplot(324), plot(t,perc.theta), title("Theta"),ylim([0 1]), xlim(lim);
 subplot(326), plot(t,perc.delta), title("Delta"),ylim([0 1]), xlim(lim);
 saveas(gcf(), "Var and perc")
+
+%%
+%Plot of the variances for each frequency band
+lim = [0 9];
+figure
+t = (1:lep:lep*floor(length(EEG)/ep_samples))/3600;
+
+plot(t,10*log10(var.alpha)),ylim([-10 50]), xlim(lim);
+hold on
+plot(t,10*log10(var.theta)),ylim([-10 50]), xlim(lim);
+plot(t,10*log10(var.delta)),ylim([-10 50]), xlim(lim);
+
+legend('alpha', 'theta', 'delta')
+
+% subplot(322), plot(t,perc.alpha), title("Alpha"),ylim([0 1]), xlim(lim);
+% subplot(324), plot(t,perc.theta), title("Theta"),ylim([0 1]), xlim(lim);
+% subplot(326), plot(t,perc.delta), title("Delta"),ylim([0 1]), xlim(lim);
+% saveas(gcf(), "Var and perc")
+
 
 %% 
 domTab = cell(floor(length(EEG)/ep_samples),1);
