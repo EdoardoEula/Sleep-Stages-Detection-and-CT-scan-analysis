@@ -1,7 +1,7 @@
 clc
 clear
 close all
-%%
+%% Loading and cutting the signal
 load("record.mat");
 EEG = double(record);
 clear record
@@ -15,9 +15,10 @@ N = length(EEG);
 % figure, freqz(b3,a3);
 EEG = filtfilt(b,a, EEG);
 
-%Low-pass
 filter_order = 4;
-f_cut = 40;
+
+%Low-pass
+f_cut = 70;
 wc = f_cut/(fs_EEG/2);
 [b,a] = butter(filter_order,wc,'low');
 %figure; freqz(b1,a1,1024,fs_EEG);
@@ -34,11 +35,11 @@ EEG = filtfilt(b,a,EEG);
 
 %plotting power spectrum
 noverlap = 20*fs_EEG;
-Pxx = pwelch(EEG, hanning(length(EEG)), noverlap, [], fs_EEG);
-freq1 = 0:fs_EEG/length(Pxx):fs_EEG/2;
+[Pxx, freq1] = pwelch(EEG, hanning(length(EEG)), noverlap, [], fs_EEG);
 
 figure
-plot(freq1, Pxx(1:length(Pxx)/2+1))
+plot(freq1, Pxx)
+xlim([0 15])
 
 %% Dividing into epochs
 % 30 sec
@@ -46,7 +47,7 @@ lep = 30;
 ep_samples = lep*fs_EEG;
 
 %EEG bands
-f_vect_high = [8 4 2];
+f_vect_high = [8 4 2.5];
 f_vect_low = [14 8 4];
 names = ["alpha", "theta", "delta"];
 
@@ -60,27 +61,9 @@ for i = 1:floor(length(EEG)/ep_samples)
     ep{i} = EEG(1+ep_samples*(i-1):ep_samples*(i));
     ep{i} = detrend(ep{i});
 
-
-%     %Low-pass
-%     filter_order = 2;
-%     f_cut = 15;
-%     wc = f_cut/(fs_EEG/2);
-%     [b,a] = butter(filter_order,wc,'low');
-%     %figure; freqz(b1,a1,1024,fs_EEG);
-% 
-%     ep{i} = filtfilt(b,a,ep{i});
-% 
-%     %High-pass
-%     f_cut = 2;
-%     wc = f_cut/(fs_EEG/2);
-%     [b,a] = butter(filter_order,wc,'high');
-%     %figure; freqz(b1,a1,1024,fs_EEG);
-% 
-%     ep{i} = filtfilt(b,a,ep{i});
-
     %PSD with Welch windowing
     noverlap = 20*fs_EEG;
-    Pxx_ep = pwelch(ep{i}, hanning(ep_samples), noverlap, [], fs_EEG);
+    [Pxx_ep, freq_ep] = pwelch(ep{i}, hanning(ep_samples), noverlap, [], fs_EEG);
     freq1_ep = 0:fs_EEG/length(Pxx_ep):fs_EEG/2;
 
     for j = 1 : length(f_vect_low)
@@ -99,36 +82,12 @@ for i = 1:floor(length(EEG)/ep_samples)
         %figure; freqz(b1,a1,1024,fs_EEG);
         ep_filt = filtfilt(b1,a1,ep_lp);
 
-        %         %PSD with fft
-        %         DFTx = fft(ep_filt);
-        %         DFTx = DFTx(1:ep_samples/2 + 1);
-        %         PSDx = (1/(fs_EEG*ep_samples)) * abs(DFTx).^2;
-        %         PSDx(2:end) = 2*PSDx(2:end);
-        %         freq1 = 0:fs_EEG/ep_samples:fs_EEG/2;
-
-        %         figure, plot(freq1,PSDx)
-        %         ylabel("[power/Hz]")
-        %         title([names{j}, " epoch", i])
-        %         xlim([0 f_vect_low(j) + 5])
-
         %PSD with Welch windowing
         noverlap = 20*fs_EEG/2;
-        Pxx = pwelch(ep_filt, hanning(ep_samples), noverlap, [], fs_EEG);
+        [Pxx, freq] = pwelch(ep_filt, hanning(ep_samples), noverlap, [], fs_EEG);
 
-        var{i,j} = trapz(Pxx);
-        perc{i, j} = trapz(Pxx)/trapz(Pxx_ep);
-
-        %         %PSD with periodogram
-        %         nfft=16384;
-        %         [pxx,f]=periodogram(ep_filt, rectwin(length(ep_filt)), nfft,fs_EEG);
-        %
-        %
-        % %         figure,
-        % %         plot(f,10*log10(pxx))
-        % %         ylabel("[dB/Hz]")
-        % %         title([names{j}, " epoch", i])
-        % %         xlim([0 f_vect_low(j) + 5])
-        %         var_per{i, j} = trapz(f, pxx)/trapz(f_ep, pxx_ep);
+        var{i,j} = trapz(freq, Pxx);
+        perc{i, j} = trapz(freq, Pxx)/trapz(freq_ep, Pxx_ep);
     end
 end
 
@@ -151,20 +110,6 @@ perc = cell2table(perc, 'VariableNames', names);
 % subplot(412), plot(t,var.alpha), title("Alpha"),ylim([0 1]), xlim(lim);
 % subplot(413), plot(t,var.theta), title("Theta"),ylim([0 1]), xlim(lim);
 % subplot(414), plot(t,var.delta), title("Delta"),ylim([0 1]), xlim(lim);
-%%
-%Plot of the variances for each frequency band
-lim = [0 9];
-figure
-t = (1:lep:lep*floor(length(EEG)/ep_samples))/3600;
-
-subplot(321), plot(t,10*log10(var.alpha)), title("Alpha"),ylim([-10 50]), xlim(lim);
-subplot(323), plot(t,10*log10(var.theta)), title("Theta"),ylim([-10 50]), xlim(lim);
-subplot(325), plot(t,10*log10(var.delta)), title("Delta"),ylim([-10 50]), xlim(lim);
-
-subplot(322), plot(t,perc.alpha), title("Alpha"),ylim([0 1]), xlim(lim);
-subplot(324), plot(t,perc.theta), title("Theta"),ylim([0 1]), xlim(lim);
-subplot(326), plot(t,perc.delta), title("Delta"),ylim([0 1]), xlim(lim);
-saveas(gcf(), "Var and perc")
 
 %%
 %Plot of the variances for each frequency band
@@ -172,10 +117,10 @@ lim = [0 9];
 figure
 t = (1:lep:lep*floor(length(EEG)/ep_samples))/3600;
 
-plot(t,10*log10(var.alpha)),ylim([-10 50]), xlim(lim);
+plot(t,var.alpha),ylim([-10 50]), xlim(lim);
 hold on
-plot(t,10*log10(var.theta)),ylim([-10 50]), xlim(lim);
-plot(t,10*log10(var.delta)),ylim([-10 50]), xlim(lim);
+plot(t,var.theta),ylim([-10 50]), xlim(lim);
+plot(t,var.delta),ylim([-10 50]), xlim(lim);
 
 legend('alpha', 'theta', 'delta')
 
@@ -186,6 +131,7 @@ legend('alpha', 'theta', 'delta')
 
 
 %% 
+st = 1:5;
 domTab = cell(floor(length(EEG)/ep_samples),1);
 for i = 1:floor(length(EEG)/ep_samples)
     j = perc{i,:} == max(perc{i,:});
@@ -194,3 +140,7 @@ end
 
 domTab = cell2table(domTab, 'VariableNames', "Dominant band");
 save("dom_waves.mat", "domTab");
+
+%% hypnogram
+stages = [{'awake'}, {'stage 1'}, {'stage 2'}, {'stage 3'}, {'stage 4'}];   
+
