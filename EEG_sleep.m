@@ -85,8 +85,6 @@ figure
 plot(freq1, Pxx)
 xlim([0.5 70])
 
-%% 
-
 %% Dividing into epochs
 % 30 sec
 lep = 30;
