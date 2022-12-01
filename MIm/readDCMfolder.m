@@ -1,4 +1,4 @@
-function [D, vol,info] = readDCMfolder(t)
+function [vol,info] = readDCMfolder(t)
 %%
 folder = ['Patient0/T_', t, '/CT/'];
 D = dir([folder, '*.dcm']);
