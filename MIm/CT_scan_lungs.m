@@ -26,10 +26,11 @@ im = vol{1}(:,:,50);
 %%
 figure
 imshow(im, [])
-h = drawellipse('Center',[260 267],'SemiAxes',[140 220], ...
-    'RotationAngle',90,'StripeColor','m'); %sistemare misure ellisse
+[X,Y] = getpts();
+% h = drawellipse('Center',[260 267],'SemiAxes',[140 220], ...
+%     'RotationAngle',90,'StripeColor','m'); %sistemare misure ellisse
 %%
-mask = createMask(h);
+mask = poly2mask(X, Y, 512, 512);
 
 %%
 I_max = max(max(im));
@@ -59,11 +60,11 @@ close
 
 %%
 % gamma_vect = 0.7:0.1:1.5;
-% LOW_IN = min(roi(:));
-% HIGH_IN = max(roi(:));
-% 
-% LOW_OUT = 0;
-% HIGH_OUT = 1;
+LOW_IN = min(roi(:));
+HIGH_IN = max(roi(:));
+
+LOW_OUT = 0;
+HIGH_OUT = 1;
 % 
 % roi_adj = zeros(size(roi, 1), size(roi, 2), 1, length(gamma_vect));
 % 
@@ -91,20 +92,23 @@ subplot(121), imshow(roi_adj_tN)
 subplot(122), imhist(roi_adj_t)
 
 %%
-roi_adj_tN(:,:,136) = 0;
+roi_adj_tN(512,512,136) = 0;
 for i = 1:136
     im = vol{1}(:,:,i);
-    h = drawellipse('Center',[260 267],'SemiAxes',[140 220], ...
-        'RotationAngle',90,'StripeColor','m');
-    mask = createMask(h);
+    mask = poly2mask(X, Y, 512, 512);
     I_max = max(max(im));
     roi = im .* mask;
     max_im = max(roi(:));
     min_im = min(roi(:));
     roi = (roi-min_im)./max_im;
     gamma = 0.3;
+    LOW_IN = min(roi(:));
+    HIGH_IN = max(roi(:));
+    LOW_OUT = 0;
+    HIGH_OUT = 1;
     roi_adj = imadjust(roi, [LOW_IN HIGH_IN], [LOW_OUT HIGH_OUT], gamma);
     roi_adj_t = roi_adj;
     roi_adj_t(roi_adj > 0.65) = 0;
-    roi_adj_tN(:,:,i) = imcomplement(roi_adj_t);
+    %roi_adj_tN(:,:,i) = imcomplement(roi_adj_t);
+    roi_adj_tN(:,:,i) = roi_adj_t;
 end
