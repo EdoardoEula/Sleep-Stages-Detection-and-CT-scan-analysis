@@ -10,7 +10,7 @@ for ti = 1:length(t)
     [vol{ti}, info{ti}] = readDCMfolder(t{ti});
 end
 %% Example image
-im = vol{1}(:,:,50);
+im = vol{1}(:,:,1);
 %%
 % I_max = max(max(im));
 % im_bin = imbinarize(im, I_max/2);
@@ -29,6 +29,7 @@ imshow(im, [])
 [X,Y] = getpts();
 % h = drawellipse('Center',[260 267],'SemiAxes',[140 220], ...
 %     'RotationAngle',90,'StripeColor','m'); %sistemare misure ellisse
+
 %%
 mask = poly2mask(X, Y, 512, 512);
 
@@ -44,24 +45,24 @@ subplot(122), imshow(roi, []);
 
 %%
 %Normalisation
-max_im = max(roi(:));
-min_im = min(roi(:));
-roi = (roi-min_im)./max_im;
+max_im = max(im(:));
+min_im = min(im(:));
+im = (im-min_im)./(max_im-min_im);
 figure
-imshow(roi, []);
+imshow(im, []);
 
 figure
-subplot(311), imhist(roi, 32), title('N = 32');
-subplot(312), imhist(roi, 64), title('N = 64');
-subplot(313), imhist(roi, 256), title('N = 256');
+subplot(311), imhist(im, 32), title('N = 32');
+subplot(312), imhist(im, 64), title('N = 64');
+subplot(313), imhist(im, 256), title('N = 256');
 
 pause(3)
 close
 
 %%
 % gamma_vect = 0.7:0.1:1.5;
-LOW_IN = min(roi(:));
-HIGH_IN = max(roi(:));
+LOW_IN = min(im(:));
+HIGH_IN = max(im(:));
 
 LOW_OUT = 0;
 HIGH_OUT = 1;
@@ -75,8 +76,8 @@ HIGH_OUT = 1;
 % figure, montage(roi_adj)
 
 %% Adjusted image
-gamma = 0.3;
-roi_adj = imadjust(roi, [LOW_IN HIGH_IN], [LOW_OUT HIGH_OUT], gamma);
+gamma = 0.9;
+roi_adj = imadjust(im, [LOW_IN HIGH_IN], [LOW_OUT HIGH_OUT], gamma);
 figure, 
 subplot(121), imshow(roi_adj)
 subplot(122), imhist(roi_adj)
@@ -85,30 +86,71 @@ subplot(122), imhist(roi_adj)
 roi_adj_t = roi_adj;
 roi_adj_t(roi_adj > 0.65) = 0;
 
-roi_adj_tN = imcomplement(roi_adj_t);
-
 figure, 
-subplot(121), imshow(roi_adj_tN)
+subplot(121), imshow(roi_adj_t)
 subplot(122), imhist(roi_adj_t)
 
 %%
-roi_adj_tN(512,512,136) = 0;
-for i = 1:136
+figure, imshow(roi_adj_t)
+[X,Y] = getpts()
+bw = bwselect(roi_adj_t, X, Y)
+
+%%
+figure, imshow(bw)
+
+%%
+segmented_image(512,512,100) = 0;
+bw_t(512,512,59) = 0;
+for i = 1:59
     im = vol{1}(:,:,i);
-    mask = poly2mask(X, Y, 512, 512);
-    I_max = max(max(im));
-    roi = im .* mask;
-    max_im = max(roi(:));
-    min_im = min(roi(:));
-    roi = (roi-min_im)./max_im;
-    gamma = 0.3;
-    LOW_IN = min(roi(:));
-    HIGH_IN = max(roi(:));
+    max_im = max(im(:));
+    min_im = min(im(:));
+    im = (im-min_im)./(max_im-min_im);
+    XY = im;
+    gamma = 0.8;
+    im=XY;
+    LOW_IN = min(im(:));
+    HIGH_IN = max(im(:));
     LOW_OUT = 0;
     HIGH_OUT = 1;
-    roi_adj = imadjust(roi, [LOW_IN HIGH_IN], [LOW_OUT HIGH_OUT], gamma);
+    roi_adj = imadjust(im, [LOW_IN HIGH_IN], [LOW_OUT HIGH_OUT], gamma);
     roi_adj_t = roi_adj;
     roi_adj_t(roi_adj > 0.65) = 0;
+    bw = bwselect(roi_adj_t, X, Y);
+    bw = imfill(bw,"holes");
+    figure, imshow(im.*single(bw))
     %roi_adj_tN(:,:,i) = imcomplement(roi_adj_t);
-    roi_adj_tN(:,:,i) = roi_adj_t;
+    im = histeq(im);
+    segmented_image(:,:,i) = im.*single(bw);
+    bw_t(:,:,i) = im.*single(bw);
 end
+
+%%
+volumeViewer(segmented_image)
+
+%%
+
+volLungsPixels = regionprops3(bw_t,"volume");
+
+spacingx = 0.76;
+spacingy = 0.76;
+spacingz = 1.26*1e-6;
+unitvol = spacingx*spacingy*spacingz;
+
+volLungs = volLungsPixels.Volume(1)*unitvol;
+
+%% Cross-sectional area
+V = vol{1}(:,:,:);
+
+%Normalization
+for i=1:136
+    max_im = max(V(:,:,i));
+    min_im = min(V(:,:,i));
+    V(:,:,i) = (V(:,:,i)-min_im)./(max_im-min_im);
+end
+
+%We choose the middle slice
+XY = V(:,:,30);
+XZ = squeeze(V(256,:,:));
+
+imshow(XZ, [])
