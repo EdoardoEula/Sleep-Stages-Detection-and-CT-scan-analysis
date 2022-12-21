@@ -33,7 +33,7 @@ function [segmented_image] = Segment_XY(vol,T, gamma, RECT, X, Y, noise)
         LOW_OUT = 0;
         HIGH_OUT = 1;
         im_adj = imadjust(im, [LOW_IN HIGH_IN], [LOW_OUT HIGH_OUT], gamma);
-    
+        
         im_adj(im_adj > 0.5) = 0;
         bw = bwselect(im_adj, X, Y);
         bw = imfill(bw,"holes"); %correction of holes

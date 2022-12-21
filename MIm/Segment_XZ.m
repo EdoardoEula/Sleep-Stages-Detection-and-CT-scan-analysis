@@ -1,5 +1,5 @@
 function [segmented_image_XZ] = Segment_XZ(vol,T, gamma, X, Z)
-for t = 1: length(T)
+for t = 1:length(T)
     if t~=6
         im_vect_XZ = vol{t}(180:315,:,1:52);
     else 
@@ -8,7 +8,6 @@ for t = 1: length(T)
 
     for i = 1:136
         im_XZ = squeeze(im_vect_XZ(i,:,:));
-        %im_XZ = imcrop(im_XZ, RECT);
         max_im = max(im_XZ(:));
         min_im = min(im_XZ(:));
         im_XZ = (im_XZ-min_im)./(max_im-min_im);
